@@ -1,5 +1,6 @@
 import "./style.css";
 import clampNumber from "./utils/clampNumber";
+import percentToValue from "./utils/percentToValue";
 
 const app = document.querySelector<HTMLDivElement>("#app")!;
 
@@ -13,6 +14,7 @@ app.innerHTML = `
 type Options = {
   min: number;
   max: number;
+  value?: number;
   step?: number;
 };
 
@@ -20,14 +22,16 @@ class Slider {
   #min: number;
   #max: number;
   #step: number;
+  #value: number;
 
   #sliderContainer: HTMLDivElement;
   #progress: HTMLDivElement;
   #thumb: HTMLDivElement;
 
-  constructor({ min, max, step }: Options) {
+  constructor({ min, max, step, value }: Options) {
     this.#min = min;
     this.#max = max;
+    this.#value = value || 0;
     this.#step = step || 1;
 
     this.#sliderContainer = document.querySelector<HTMLDivElement>("#slider")!;
@@ -50,21 +54,23 @@ class Slider {
   };
 
   #onMouseMove = (evt: MouseEvent) => {
-    const { width, left } = this.#sliderContainer.getBoundingClientRect();;
+    const { width, left } = this.#sliderContainer.getBoundingClientRect();
     const startX = evt.pageX - left;
 
     const movedProgress = Math.floor((startX / width) * 100);
     const clampedProgress = clampNumber(movedProgress, 0, 100);
     const stepPercent = (this.#step / this.#max) * 100;
     const stepedValue = Math.floor(clampedProgress / stepPercent) * stepPercent;
-    
-    const value = stepedValue;
 
-    this.#progress.style.width = `${value}%`;
-    this.#thumb.style.left = `${value}%`;
+    const filledPercent = stepedValue;
+
+    this.#value = percentToValue(filledPercent / 100, this.#min, this.#max);
+
+    this.#progress.style.width = `${filledPercent}%`;
+    this.#thumb.style.left = `${filledPercent}%`;
   };
 
-  #onMouseUp = () => {
+  #onMouseUp = () => {    
     document.removeEventListener("mousemove", this.#onMouseMove);
   };
 }
