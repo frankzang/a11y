@@ -72,6 +72,7 @@ class Slider {
 
   #onMouseUp = () => {    
     document.removeEventListener("mousemove", this.#onMouseMove);
+    document.removeEventListener("mouseup", this.#onMouseUp);
   };
 }
 
