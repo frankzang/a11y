@@ -37,10 +37,6 @@ class Slider {
     this.#initEventListeners();
   }
 
-  get #sliderRect() {
-    return this.#sliderContainer.getBoundingClientRect();
-  }
-
   #initEventListeners = () => {
     this.#sliderContainer.addEventListener("mousedown", this.#onMouseDown);
   };
@@ -54,17 +50,18 @@ class Slider {
   };
 
   #onMouseMove = (evt: MouseEvent) => {
-    evt.preventDefault();
-    evt.stopPropagation();
-
-    const { width, left } = this.#sliderRect;
+    const { width, left } = this.#sliderContainer.getBoundingClientRect();;
     const startX = evt.pageX - left;
 
     const movedProgress = Math.floor((startX / width) * 100);
     const clampedProgress = clampNumber(movedProgress, 0, 100);
+    const stepPercent = (this.#step / this.#max) * 100;
+    const stepedValue = Math.floor(clampedProgress / stepPercent) * stepPercent;
+    
+    const value = stepedValue;
 
-    this.#progress.style.width = `${clampedProgress}%`;
-    this.#thumb.style.left = `${clampedProgress}%`;
+    this.#progress.style.width = `${value}%`;
+    this.#thumb.style.left = `${value}%`;
   };
 
   #onMouseUp = () => {
@@ -72,4 +69,4 @@ class Slider {
   };
 }
 
-new Slider({ min: 0, max: 50, step: 20 });
+new Slider({ min: 0, max: 100, step: 1 });
