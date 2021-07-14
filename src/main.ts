@@ -32,7 +32,7 @@ class Slider {
     this.#min = min;
     this.#max = max;
     this.#value = value || 0;
-    this.#step = step || 1;
+    this.#step = this.#calcStepValue(step, max);
 
     this.#sliderContainer = document.querySelector<HTMLDivElement>("#slider")!;
     this.#progress = document.querySelector<HTMLDivElement>("#progress")!;
@@ -41,8 +41,13 @@ class Slider {
     this.#initEventListeners();
   }
 
+  #calcStepValue = (step = 1, max: number) => {
+    return (step / max) * 100;
+  }
+
   #initEventListeners = () => {
     this.#sliderContainer.addEventListener("mousedown", this.#onMouseDown);
+    this.#sliderContainer.addEventListener("touchstart", this.#onTouchStart);
   };
 
   #onMouseDown = (evt: MouseEvent) => {
@@ -59,8 +64,7 @@ class Slider {
 
     const movedProgress = Math.floor((startX / width) * 100);
     const clampedProgress = clampNumber(movedProgress, 0, 100);
-    const stepPercent = (this.#step / this.#max) * 100;
-    const stepedValue = Math.floor(clampedProgress / stepPercent) * stepPercent;
+    const stepedValue = Math.floor(clampedProgress / this.#step) * this.#step;
 
     const filledPercent = stepedValue;
 
@@ -74,6 +78,35 @@ class Slider {
     document.removeEventListener("mousemove", this.#onMouseMove);
     document.removeEventListener("mouseup", this.#onMouseUp);
   };
+
+  #onTouchStart = (evt: TouchEvent) => {
+    evt.preventDefault();
+    evt.stopPropagation();
+
+    document.addEventListener("touchmove", this.#onTouchMove);
+    document.addEventListener("touchend", this.#onTouchEnd);
+  }
+
+  #onTouchMove = (evt: TouchEvent) => {
+    const { width, left } = this.#sliderContainer.getBoundingClientRect();
+    const startX = evt.changedTouches[0].pageX - left;
+
+    const movedProgress = Math.floor((startX / width) * 100);
+    const clampedProgress = clampNumber(movedProgress, 0, 100);
+    const stepedValue = Math.floor(clampedProgress / this.#step) * this.#step;
+
+    const filledPercent = stepedValue;
+
+    this.#value = percentToValue(filledPercent / 100, this.#min, this.#max);
+
+    this.#progress.style.width = `${filledPercent}%`;
+    this.#thumb.style.left = `${filledPercent}%`;
+  }
+
+  #onTouchEnd = () => {
+    document.removeEventListener("touchmove", this.#onTouchMove);
+    document.removeEventListener("touchend", this.#onTouchEnd);
+  }
 }
 
-new Slider({ min: 0, max: 100, step: 1 });
+new Slider({ min: 0, max: 100, step: 20 });
