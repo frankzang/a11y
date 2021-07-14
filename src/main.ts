@@ -45,16 +45,15 @@ class Slider {
 
   get value() {
     const totalValue = Math.floor(
-      percentToValue(this.#value, this.#min, this.#max)
+      // transform our value to percentage to calculate the real output value
+      percentToValue(this.#value / 100, this.#min, this.#max)
     );
 
     return clampNumber(totalValue, this.#min, this.#max);
   }
 
   #calcStepValue = (step = 1, max: number) => {
-    if (step < 1) return 1 / max;
-
-    return step / max;
+    return (step > 0 ? step : 1) / max * 100;
   };
 
   #initEventListeners = () => {
@@ -102,9 +101,9 @@ class Slider {
   };
 
   #getInteractionCoords = (evt: SomePointerEvent) => {
-    if ("pageX" in evt) return evt.pageX;
+    if (evt instanceof MouseEvent) return evt.pageX;
 
-    if ("changedTouches" in evt) return evt.changedTouches[0].pageX;
+    if (evt instanceof TouchEvent) return evt.changedTouches[0].pageX;
 
     return 0;
   };
@@ -113,7 +112,7 @@ class Slider {
     const { width, left } = this.#sliderContainer.getBoundingClientRect();
     const startX = this.#getInteractionCoords(evt) - left;
 
-    const movedProgress = startX / (width - 10);
+    const movedProgress = Math.floor(startX / (width - 10) * 100);
     const stepedProgress = Math.floor(movedProgress / this.#step) * this.#step;
 
     this.#value = stepedProgress;
@@ -121,11 +120,11 @@ class Slider {
   };
 
   #moveSlider = () => {
-    const filledValue = Math.floor(this.#value * 100);
+    const filledValue = Math.floor(this.#value);
     const clampedValue = clampNumber(filledValue, 0, 100);
 
     this.#progress.style.width = `${clampedValue}%`;
-    this.#thumb.style.left = `${clampedValue}%`;
+    this.#thumb.style.left = `${clampedValue}%`;    
   };
 }
 
