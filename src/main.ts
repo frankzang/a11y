@@ -11,12 +11,14 @@ app.innerHTML = `
   </div>
 `;
 
-type Options = {
+type SliderOptions = {
   min: number;
   max: number;
   value?: number;
   step?: number;
 };
+
+type SomePointerEvent = MouseEvent | TouchEvent;
 
 class Slider {
   #min: number;
@@ -28,7 +30,7 @@ class Slider {
   #progress: HTMLDivElement;
   #thumb: HTMLDivElement;
 
-  constructor({ min, max, step, value }: Options) {
+  constructor({ min, max, step, value }: SliderOptions) {
     this.#min = min;
     this.#max = max;
     this.#value = value || 0;
@@ -62,8 +64,7 @@ class Slider {
   };
 
   #onClick = (evt: MouseEvent) => {
-    const startX = evt.pageX;
-    this.#move(startX);
+    this.#onInteraction(evt);
   };
 
   #onMouseDown = (evt: MouseEvent) => {
@@ -75,8 +76,7 @@ class Slider {
   };
 
   #onMouseMove = (evt: MouseEvent) => {
-    const startX = evt.pageX;
-    this.#move(startX);
+    this.#onInteraction(evt);
   };
 
   #onMouseUp = () => {
@@ -93,8 +93,7 @@ class Slider {
   };
 
   #onTouchMove = (evt: TouchEvent) => {
-    const startX = evt.changedTouches[0].pageX;
-    this.#move(startX);
+    this.#onInteraction(evt);
   };
 
   #onTouchEnd = () => {
@@ -102,18 +101,26 @@ class Slider {
     document.removeEventListener("touchend", this.#onTouchEnd);
   };
 
-  #move = (pageXOffset: number) => {
+  #getInteractionCoords = (evt: SomePointerEvent) => {
+    if ("pageX" in evt) return evt.pageX;
+
+    if ("changedTouches" in evt) return evt.changedTouches[0].pageX;
+
+    return 0;
+  };
+
+  #onInteraction = (evt: SomePointerEvent) => {
     const { width, left } = this.#sliderContainer.getBoundingClientRect();
-    const startX = pageXOffset - left;
+    const startX = this.#getInteractionCoords(evt) - left;
 
     const movedProgress = startX / (width - 10);
     const stepedProgress = Math.floor(movedProgress / this.#step) * this.#step;
 
     this.#value = stepedProgress;
-    this.#moveSliderTo();
+    this.#moveSlider();
   };
 
-  #moveSliderTo = () => {
+  #moveSlider = () => {
     const filledValue = Math.floor(this.#value * 100);
     const clampedValue = clampNumber(filledValue, 0, 100);
 
