@@ -41,13 +41,29 @@ class Slider {
     this.#initEventListeners();
   }
 
-  #calcStepValue = (step = 1, max: number) => {
-    return (step / max) * 100;
+  get value() {
+    const totalValue = Math.floor(
+      percentToValue(this.#value, this.#min, this.#max)
+    );
+
+    return clampNumber(totalValue, this.#min, this.#max);
   }
+
+  #calcStepValue = (step = 1, max: number) => {
+    if (step < 1) return 1 / max;
+
+    return step / max;
+  };
 
   #initEventListeners = () => {
     this.#sliderContainer.addEventListener("mousedown", this.#onMouseDown);
     this.#sliderContainer.addEventListener("touchstart", this.#onTouchStart);
+    this.#sliderContainer.addEventListener("click", this.#onClick);
+  };
+
+  #onClick = (evt: MouseEvent) => {
+    const startX = evt.pageX;
+    this.#move(startX);
   };
 
   #onMouseDown = (evt: MouseEvent) => {
@@ -59,22 +75,11 @@ class Slider {
   };
 
   #onMouseMove = (evt: MouseEvent) => {
-    const { width, left } = this.#sliderContainer.getBoundingClientRect();
-    const startX = evt.pageX - left;
-
-    const movedProgress = Math.floor((startX / width) * 100);
-    const clampedProgress = clampNumber(movedProgress, 0, 100);
-    const stepedValue = Math.floor(clampedProgress / this.#step) * this.#step;
-
-    const filledPercent = stepedValue;
-
-    this.#value = percentToValue(filledPercent / 100, this.#min, this.#max);
-
-    this.#progress.style.width = `${filledPercent}%`;
-    this.#thumb.style.left = `${filledPercent}%`;
+    const startX = evt.pageX;
+    this.#move(startX);
   };
 
-  #onMouseUp = () => {    
+  #onMouseUp = () => {
     document.removeEventListener("mousemove", this.#onMouseMove);
     document.removeEventListener("mouseup", this.#onMouseUp);
   };
@@ -85,28 +90,36 @@ class Slider {
 
     document.addEventListener("touchmove", this.#onTouchMove);
     document.addEventListener("touchend", this.#onTouchEnd);
-  }
+  };
 
   #onTouchMove = (evt: TouchEvent) => {
-    const { width, left } = this.#sliderContainer.getBoundingClientRect();
-    const startX = evt.changedTouches[0].pageX - left;
-
-    const movedProgress = Math.floor((startX / width) * 100);
-    const clampedProgress = clampNumber(movedProgress, 0, 100);
-    const stepedValue = Math.floor(clampedProgress / this.#step) * this.#step;
-
-    const filledPercent = stepedValue;
-
-    this.#value = percentToValue(filledPercent / 100, this.#min, this.#max);
-
-    this.#progress.style.width = `${filledPercent}%`;
-    this.#thumb.style.left = `${filledPercent}%`;
-  }
+    const startX = evt.changedTouches[0].pageX;
+    this.#move(startX);
+  };
 
   #onTouchEnd = () => {
     document.removeEventListener("touchmove", this.#onTouchMove);
     document.removeEventListener("touchend", this.#onTouchEnd);
-  }
+  };
+
+  #move = (pageXOffset: number) => {
+    const { width, left } = this.#sliderContainer.getBoundingClientRect();
+    const startX = pageXOffset - left;
+
+    const movedProgress = startX / (width - 10);
+    const stepedProgress = Math.floor(movedProgress / this.#step) * this.#step;
+
+    this.#value = stepedProgress;
+    this.#moveSliderTo();
+  };
+
+  #moveSliderTo = () => {
+    const filledValue = Math.floor(this.#value * 100);
+    const clampedValue = clampNumber(filledValue, 0, 100);
+
+    this.#progress.style.width = `${clampedValue}%`;
+    this.#thumb.style.left = `${clampedValue}%`;
+  };
 }
 
 new Slider({ min: 0, max: 100, step: 20 });
