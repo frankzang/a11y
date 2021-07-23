@@ -7,7 +7,7 @@ const app = document.querySelector<HTMLDivElement>("#app")!;
 app.innerHTML = `
   <div id="slider" class="slider">
     <div id="progress" class="progress"></div>
-    <div id="thumb" class="thumb"></div>
+    <div id="thumb" class="thumb" tabindex="0"></div>
   </div>
 `;
 
@@ -49,7 +49,8 @@ class Slider {
       percentToValue(this.#value / 100, this.#min, this.#max)
     );
 
-    return clampNumber(totalValue, this.#min, this.#max);
+    return clampNumber(
+      Math.floor(totalValue / this.#step) * this.#step, this.#min, this.#max);
   }
 
   #calcStepValue = (step = 1, max: number) => {
@@ -60,6 +61,7 @@ class Slider {
     this.#sliderContainer.addEventListener("mousedown", this.#onMouseDown);
     this.#sliderContainer.addEventListener("touchstart", this.#onTouchStart);
     this.#sliderContainer.addEventListener("click", this.#onClick);
+    this.#thumb.addEventListener("keydown", this.#onKeyDown);
   };
 
   #onClick = (evt: MouseEvent) => {
@@ -100,6 +102,55 @@ class Slider {
     document.removeEventListener("touchend", this.#onTouchEnd);
   };
 
+  #onKeyDown = (evt: KeyboardEvent) => {
+    const code = evt.key;
+    const minValue = this.#min / this.#max * 100;
+    const greaterStep = this.#getGreaterStepValue();
+    let newValue = this.#value;
+
+    switch (code) {
+      case "ArrowUp":
+      case "ArrowRight":
+        newValue += this.#step;
+        break;
+
+      case "ArrowDown":
+      case "ArrowLeft":
+        newValue -= this.#step;
+        break;
+
+      case "Home":
+        newValue = Math.floor(minValue / this.#step) * this.#step;
+        break;
+
+      case "End":
+        newValue = 100;
+        break;
+
+      case "PageUp":
+        newValue += greaterStep;
+        break;
+
+      case "PageDown":
+        newValue -= greaterStep;
+        break;
+
+      default:
+        break;
+    }
+
+    this.#value = clampNumber(newValue, 0, 100)
+    console.log(this.#value);
+    this.#moveSlider();
+  }
+
+  #getGreaterStepValue = () => {
+    const maxAdditional = 10;
+    if(this.#step < maxAdditional) return maxAdditional;
+
+    return this.#step;
+  }
+
   #getInteractionCoords = (evt: SomePointerEvent) => {
     if (evt instanceof MouseEvent) return evt.pageX;
 
@@ -124,8 +175,8 @@ class Slider {
     const clampedValue = clampNumber(filledValue, 0, 100);
 
     this.#progress.style.width = `${clampedValue}%`;
-    this.#thumb.style.left = `${clampedValue}%`;    
+    this.#thumb.style.left = `${clampedValue}%`;
   };
 }
 
-new Slider({ min: 0, max: 100, step: 20 });
+new Slider({ min: 14, max: 200, step: 5 });
