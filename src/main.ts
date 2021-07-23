@@ -24,7 +24,7 @@ class Slider {
   #min: number;
   #max: number;
   #step: number;
-  #value: number;
+  #progressValue: number;
 
   #sliderContainer: HTMLDivElement;
   #progress: HTMLDivElement;
@@ -33,7 +33,7 @@ class Slider {
   constructor({ min, max, step, value }: SliderOptions) {
     this.#min = min;
     this.#max = max;
-    this.#value = value || 0;
+    this.#progressValue = value || 0;
     this.#step = this.#calcStepValue(step, max);
 
     this.#sliderContainer = document.querySelector<HTMLDivElement>("#slider")!;
@@ -46,7 +46,7 @@ class Slider {
   get value() {
     const totalValue = Math.floor(
       // transform our value to percentage to calculate the real output value
-      percentToValue(this.#value / 100, this.#min, this.#max)
+      percentToValue(this.#progressValue / 100, this.#min, this.#max)
     );
 
     return clampNumber(
@@ -56,6 +56,12 @@ class Slider {
   #calcStepValue = (step = 1, max: number) => {
     return (step > 0 ? step : 1) / max * 100;
   };
+
+  #updateProgressValue = (newValue: number) => {
+    const minValue = (this.#min / this.#max) * 100;
+
+    this.#progressValue = clampNumber(newValue, minValue, 100);
+  }
 
   #initEventListeners = () => {
     this.#sliderContainer.addEventListener("mousedown", this.#onMouseDown);
@@ -106,7 +112,7 @@ class Slider {
     const code = evt.key;
     const minValue = this.#min / this.#max * 100;
     const greaterStep = this.#getGreaterStepValue();
-    let newValue = this.#value;
+    let newValue = this.#progressValue;
 
     switch (code) {
       case "ArrowUp":
@@ -139,8 +145,7 @@ class Slider {
         break;
     }
 
-    this.#value = clampNumber(newValue, 0, 100)
-    console.log(this.#value);
+    this.#updateProgressValue(newValue);
     this.#moveSlider();
   }
 
@@ -166,17 +171,19 @@ class Slider {
     const movedProgress = Math.floor(startX / (width - 10) * 100);
     const stepedProgress = Math.floor(movedProgress / this.#step) * this.#step;
 
-    this.#value = stepedProgress;
+    this.#updateProgressValue(stepedProgress);
     this.#moveSlider();
   };
 
   #moveSlider = () => {
-    const filledValue = Math.floor(this.#value);
-    const clampedValue = clampNumber(filledValue, 0, 100);
+    const filledValue = Math.floor(this.#progressValue);
 
-    this.#progress.style.width = `${clampedValue}%`;
-    this.#thumb.style.left = `${clampedValue}%`;
+    this.#progress.style.width = `${filledValue}%`;
+    this.#thumb.style.left = `${filledValue}%`;
+
+    console.log(this.value);
+    
   };
 }
 
-new Slider({ min: 14, max: 200, step: 5 });
+new Slider({ min: 14, max: 100, step: 10 });
