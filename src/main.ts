@@ -43,7 +43,7 @@ class Slider {
     this.#progress = document.createElement("div");
     this.#thumb = document.createElement("div");
 
-    this.#createContainer();
+    this.#setupSlider();
     this.#initDefaultValue();
     this.#initEventListeners();
   }
@@ -73,11 +73,12 @@ class Slider {
     this.#progressValue = clampNumber(newValue, minValue, 1);
   };
 
-  #createContainer = () => {
+  #setupSlider = () => {
     this.#slider.classList.add("slider");
     this.#progress.classList.add("progress");
     this.#thumb.classList.add("thumb");
     this.#thumb.setAttribute("role", "slider");
+    this.#thumb.setAttribute("tabindex", "0");
     this.#thumb.setAttribute("aria-valuemin", this.#min.toString());
     this.#thumb.setAttribute("aria-valuemax", this.#max.toString());
     this.#thumb.setAttribute("aria-valuenow", this.value.toString());
