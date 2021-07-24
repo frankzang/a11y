@@ -60,7 +60,6 @@ class Slider {
 
   get value() {
     const totalValue = Math.floor(
-      // transform our value to percentage to calculate the real output value
       percentToValue(this.#progressValue, this.#min, this.#max)
     );
 
