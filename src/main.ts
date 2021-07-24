@@ -212,13 +212,14 @@ class Slider {
 
     this.#progress.style.width = `${stepedProgress}%`;
     this.#thumb.style.left = `${stepedProgress}%`;
+    this.#thumb.setAttribute("aria-valuenow", this.value.toString());
   };
 }
 
 new Slider({
   container: "#slider",
   min: 0,
-  max: 100,
-  step: 1,
+  max: 200,
+  step: 20,
   defaultValue: 25,
 });
