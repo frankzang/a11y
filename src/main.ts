@@ -15,6 +15,7 @@ type SliderOptions = {
   defaultValue?: number;
   step?: number;
   container: string;
+  onChange?: (value: number) => void;
 };
 
 type SomePointerEvent = MouseEvent | TouchEvent;
@@ -25,19 +26,28 @@ class Slider {
   #step: number;
   #defaultValue: number;
   #progressValue: number;
+  #onChange?: SliderOptions["onChange"];
 
   #container: string;
   #slider: HTMLDivElement;
   #progress: HTMLDivElement;
   #thumb: HTMLDivElement;
 
-  constructor({ min, max, step, defaultValue, container }: SliderOptions) {
+  constructor({
+    min,
+    max,
+    step,
+    defaultValue,
+    container,
+    onChange,
+  }: SliderOptions) {
     this.#min = min;
     this.#max = max;
     this.#defaultValue = defaultValue || 0;
     this.#progressValue = 0;
     this.#step = this.#calcStepValue(step, max);
     this.#container = container;
+    this.#onChange = onChange;
 
     this.#slider = document.createElement("div");
     this.#progress = document.createElement("div");
@@ -180,6 +190,7 @@ class Slider {
 
     this.#updateProgressValue(newValue);
     this.#moveSlider();
+    this.#notifyListeners();
   };
 
   #getGreaterStepValue = () => {
@@ -204,6 +215,7 @@ class Slider {
 
     this.#updateProgressValue(movedProgress);
     this.#moveSlider();
+    this.#notifyListeners();
   };
 
   #moveSlider = () => {
@@ -215,6 +227,12 @@ class Slider {
     this.#thumb.style.left = `${stepedProgress}%`;
     this.#thumb.setAttribute("aria-valuenow", this.value.toString());
   };
+
+  #notifyListeners = () => {
+    if (!this.#onChange) return;
+
+    this.#onChange(this.value);
+  };
 }
 
 new Slider({
@@ -223,4 +241,7 @@ new Slider({
   max: 200,
   step: 20,
   defaultValue: 25,
+  onChange(v) {
+    console.log({ v });
+  },
 });
