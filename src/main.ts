@@ -46,22 +46,27 @@ class Slider {
   get value() {
     const totalValue = Math.floor(
       // transform our value to percentage to calculate the real output value
-      percentToValue(this.#progressValue / 100, this.#min, this.#max)
+      percentToValue(this.#progressValue, this.#min, this.#max)
     );
 
+    const step = this.#step * 100;
+
     return clampNumber(
-      Math.floor(totalValue / this.#step) * this.#step, this.#min, this.#max);
+      Math.floor(totalValue / step) * step,
+      this.#min,
+      this.#max
+    );
   }
 
   #calcStepValue = (step = 1, max: number) => {
-    return (step > 0 ? step : 1) / max * 100;
+    return (step > 0 ? step : 1) / max;
   };
 
   #updateProgressValue = (newValue: number) => {
-    const minValue = (this.#min / this.#max) * 100;
+    const minValue = this.#min / this.#max;
 
-    this.#progressValue = clampNumber(newValue, minValue, 100);
-  }
+    this.#progressValue = clampNumber(newValue, minValue, 1);
+  };
 
   #initEventListeners = () => {
     this.#sliderContainer.addEventListener("mousedown", this.#onMouseDown);
@@ -110,7 +115,7 @@ class Slider {
 
   #onKeyDown = (evt: KeyboardEvent) => {
     const code = evt.key;
-    const minValue = this.#min / this.#max * 100;
+    const minValue = (this.#min / this.#max);
     const greaterStep = this.#getGreaterStepValue();
     let newValue = this.#progressValue;
 
@@ -126,11 +131,11 @@ class Slider {
         break;
 
       case "Home":
-        newValue = Math.floor(minValue / this.#step) * this.#step;
+        newValue = (minValue / this.#step) * this.#step;
         break;
 
       case "End":
-        newValue = 100;
+        newValue = 1;
         break;
 
       case "PageUp":
@@ -147,14 +152,14 @@ class Slider {
 
     this.#updateProgressValue(newValue);
     this.#moveSlider();
-  }
+  };
 
   #getGreaterStepValue = () => {
-    const maxAdditional = 10;
-    if(this.#step < maxAdditional) return maxAdditional;
+    const maxAdditional = .10;
+    if (this.#step < maxAdditional) return maxAdditional;
 
     return this.#step;
-  }
+  };
 
   #getInteractionCoords = (evt: SomePointerEvent) => {
     if (evt instanceof MouseEvent) return evt.pageX;
@@ -167,23 +172,20 @@ class Slider {
   #onInteraction = (evt: SomePointerEvent) => {
     const { width, left } = this.#sliderContainer.getBoundingClientRect();
     const startX = this.#getInteractionCoords(evt) - left;
+    const movedProgress = startX / (width - 10);
 
-    const movedProgress = Math.floor(startX / (width - 10) * 100);
-    const stepedProgress = Math.floor(movedProgress / this.#step) * this.#step;
-
-    this.#updateProgressValue(stepedProgress);
+    this.#updateProgressValue(movedProgress);
     this.#moveSlider();
   };
 
   #moveSlider = () => {
-    const filledValue = Math.floor(this.#progressValue);
+    const filledValue = Math.floor(this.#progressValue * 100);
+    const step = this.#step * 100;
+    const stepedProgress = Math.floor(filledValue / step) * step;
 
-    this.#progress.style.width = `${filledValue}%`;
-    this.#thumb.style.left = `${filledValue}%`;
-
-    console.log(this.value);
-    
+    this.#progress.style.width = `${stepedProgress}%`;
+    this.#thumb.style.left = `${stepedProgress}%`;
   };
 }
 
-new Slider({ min: 14, max: 100, step: 10 });
+new Slider({ min: 10, max: 100, step: 1 });
