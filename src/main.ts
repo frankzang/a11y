@@ -14,7 +14,7 @@ app.innerHTML = `
 type SliderOptions = {
   min: number;
   max: number;
-  value?: number;
+  defaultValue?: number;
   step?: number;
 };
 
@@ -24,22 +24,25 @@ class Slider {
   #min: number;
   #max: number;
   #step: number;
+  #defaultValue: number;
   #progressValue: number;
 
   #sliderContainer: HTMLDivElement;
   #progress: HTMLDivElement;
   #thumb: HTMLDivElement;
 
-  constructor({ min, max, step, value }: SliderOptions) {
+  constructor({ min, max, step, defaultValue }: SliderOptions) {
     this.#min = min;
     this.#max = max;
-    this.#progressValue = value || 0;
+    this.#defaultValue = defaultValue || 0;
+    this.#progressValue = 0;
     this.#step = this.#calcStepValue(step, max);
 
     this.#sliderContainer = document.querySelector<HTMLDivElement>("#slider")!;
     this.#progress = document.querySelector<HTMLDivElement>("#progress")!;
     this.#thumb = document.querySelector<HTMLDivElement>("#thumb")!;
 
+    this.#initDefaultValue();
     this.#initEventListeners();
   }
 
@@ -66,6 +69,13 @@ class Slider {
     const minValue = this.#min / this.#max;
 
     this.#progressValue = clampNumber(newValue, minValue, 1);
+  };
+
+  #initDefaultValue = () => {
+    const value = this.#defaultValue / this.#max;
+
+    this.#updateProgressValue(value);
+    this.#moveSlider();
   };
 
   #initEventListeners = () => {
@@ -115,7 +125,7 @@ class Slider {
 
   #onKeyDown = (evt: KeyboardEvent) => {
     const code = evt.key;
-    const minValue = (this.#min / this.#max);
+    const minValue = this.#min / this.#max;
     const greaterStep = this.#getGreaterStepValue();
     let newValue = this.#progressValue;
 
@@ -155,7 +165,7 @@ class Slider {
   };
 
   #getGreaterStepValue = () => {
-    const maxAdditional = .10;
+    const maxAdditional = 0.1;
     if (this.#step < maxAdditional) return maxAdditional;
 
     return this.#step;
@@ -188,4 +198,4 @@ class Slider {
   };
 }
 
-new Slider({ min: 10, max: 100, step: 1 });
+new Slider({ min: 0, max: 100, step: 1, defaultValue: 5 });
