@@ -5,9 +5,7 @@ import percentToValue from "./utils/percentToValue";
 const app = document.querySelector<HTMLDivElement>("#app")!;
 
 app.innerHTML = `
-  <div id="slider" class="slider">
-    <div id="progress" class="progress"></div>
-    <div id="thumb" class="thumb" tabindex="0"></div>
+  <div id="slider">
   </div>
 `;
 
@@ -16,6 +14,7 @@ type SliderOptions = {
   max: number;
   defaultValue?: number;
   step?: number;
+  container: string;
 };
 
 type SomePointerEvent = MouseEvent | TouchEvent;
@@ -27,21 +26,24 @@ class Slider {
   #defaultValue: number;
   #progressValue: number;
 
-  #sliderContainer: HTMLDivElement;
+  #container: string;
+  #slider: HTMLDivElement;
   #progress: HTMLDivElement;
   #thumb: HTMLDivElement;
 
-  constructor({ min, max, step, defaultValue }: SliderOptions) {
+  constructor({ min, max, step, defaultValue, container }: SliderOptions) {
     this.#min = min;
     this.#max = max;
     this.#defaultValue = defaultValue || 0;
     this.#progressValue = 0;
     this.#step = this.#calcStepValue(step, max);
+    this.#container = container;
 
-    this.#sliderContainer = document.querySelector<HTMLDivElement>("#slider")!;
-    this.#progress = document.querySelector<HTMLDivElement>("#progress")!;
-    this.#thumb = document.querySelector<HTMLDivElement>("#thumb")!;
+    this.#slider = document.createElement("div");
+    this.#progress = document.createElement("div");
+    this.#thumb = document.createElement("div");
 
+    this.#createContainer();
     this.#initDefaultValue();
     this.#initEventListeners();
   }
@@ -71,6 +73,21 @@ class Slider {
     this.#progressValue = clampNumber(newValue, minValue, 1);
   };
 
+  #createContainer = () => {
+    this.#slider.classList.add("slider");
+    this.#progress.classList.add("progress");
+    this.#thumb.classList.add("thumb");
+    this.#thumb.setAttribute("role", "slider");
+    this.#thumb.setAttribute("aria-valuemin", this.#min.toString());
+    this.#thumb.setAttribute("aria-valuemax", this.#max.toString());
+    this.#thumb.setAttribute("aria-valuenow", this.value.toString());
+
+    this.#slider.appendChild(this.#progress);
+    this.#slider.appendChild(this.#thumb);
+
+    document.querySelector(this.#container)?.appendChild(this.#slider);
+  };
+
   #initDefaultValue = () => {
     const value = this.#defaultValue / this.#max;
 
@@ -79,9 +96,9 @@ class Slider {
   };
 
   #initEventListeners = () => {
-    this.#sliderContainer.addEventListener("mousedown", this.#onMouseDown);
-    this.#sliderContainer.addEventListener("touchstart", this.#onTouchStart);
-    this.#sliderContainer.addEventListener("click", this.#onClick);
+    this.#slider.addEventListener("mousedown", this.#onMouseDown);
+    this.#slider.addEventListener("touchstart", this.#onTouchStart);
+    this.#slider.addEventListener("click", this.#onClick);
     this.#thumb.addEventListener("keydown", this.#onKeyDown);
   };
 
@@ -180,7 +197,7 @@ class Slider {
   };
 
   #onInteraction = (evt: SomePointerEvent) => {
-    const { width, left } = this.#sliderContainer.getBoundingClientRect();
+    const { width, left } = this.#slider.getBoundingClientRect();
     const startX = this.#getInteractionCoords(evt) - left;
     const movedProgress = startX / (width - 10);
 
@@ -198,4 +215,10 @@ class Slider {
   };
 }
 
-new Slider({ min: 0, max: 100, step: 1, defaultValue: 5 });
+new Slider({
+  container: "#slider",
+  min: 0,
+  max: 100,
+  step: 1,
+  defaultValue: 25,
+});
