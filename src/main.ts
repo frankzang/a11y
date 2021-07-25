@@ -15,7 +15,8 @@ type SliderOptions = {
   defaultValue?: number;
   step?: number;
   container: string;
-  onChange?: (value: number) => void;
+  onChange?(value: number): void;
+  ariaValueText?(value: number): string;
 };
 
 type SomePointerEvent = MouseEvent | TouchEvent;
@@ -27,6 +28,7 @@ class Slider {
   #defaultValue: number;
   #progressValue: number;
   #onChange?: SliderOptions["onChange"];
+  #ariaValueText?: SliderOptions["ariaValueText"];
 
   #container: string;
   #slider: HTMLDivElement;
@@ -40,6 +42,7 @@ class Slider {
     defaultValue,
     container,
     onChange,
+    ariaValueText,
   }: SliderOptions) {
     this.#min = min;
     this.#max = max;
@@ -48,13 +51,14 @@ class Slider {
     this.#step = this.#calcStepValue(step, max);
     this.#container = container;
     this.#onChange = onChange;
+    this.#ariaValueText = ariaValueText;
 
     this.#slider = document.createElement("div");
     this.#progress = document.createElement("div");
     this.#thumb = document.createElement("div");
 
-    this.#setupSlider();
     this.#initDefaultValue();
+    this.#createSlider();
     this.#initEventListeners();
   }
 
@@ -82,7 +86,7 @@ class Slider {
     this.#progressValue = clampNumber(newValue, minValue, 1);
   };
 
-  #setupSlider = () => {
+  #createSlider = () => {
     this.#slider.classList.add("slider");
     this.#progress.classList.add("progress");
     this.#thumb.classList.add("thumb");
@@ -92,17 +96,26 @@ class Slider {
     this.#thumb.setAttribute("aria-valuemax", this.#max.toString());
     this.#thumb.setAttribute("aria-valuenow", this.value.toString());
 
+    if (this.#ariaValueText) {
+      this.#thumb.setAttribute(
+        "aria-valuetext",
+        this.#ariaValueText(this.value)
+      );
+    }
+
     this.#slider.appendChild(this.#progress);
     this.#slider.appendChild(this.#thumb);
 
     document.querySelector(this.#container)?.appendChild(this.#slider);
+
+    // this will move the slider to default value if there is one
+    this.#moveSlider();
   };
 
   #initDefaultValue = () => {
     const value = this.#defaultValue / this.#max;
 
     this.#updateProgressValue(value);
-    this.#moveSlider();
   };
 
   #initEventListeners = () => {
@@ -204,7 +217,7 @@ class Slider {
 
     if (evt instanceof TouchEvent) return evt.changedTouches[0].pageX;
 
-    return 0;
+    throw new Error("Unsuported event");
   };
 
   #onInteraction = (evt: SomePointerEvent) => {
@@ -225,6 +238,13 @@ class Slider {
     this.#progress.style.width = `${stepedProgress}%`;
     this.#thumb.style.left = `${stepedProgress}%`;
     this.#thumb.setAttribute("aria-valuenow", this.value.toString());
+
+    if (this.#ariaValueText) {
+      this.#thumb.setAttribute(
+        "aria-valuetext",
+        this.#ariaValueText(this.value)
+      );
+    }
   };
 
   #notifyListeners = () => {
@@ -242,5 +262,8 @@ new Slider({
   defaultValue: 25,
   onChange(v) {
     console.log({ v });
+  },
+  ariaValueText(v) {
+    return `step-${v.toString()}`;
   },
 });
