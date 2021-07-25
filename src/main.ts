@@ -15,6 +15,9 @@ type SliderOptions = {
   defaultValue?: number;
   step?: number;
   container: string;
+  name?: string;
+  ariaLabel?: string;
+  ariaLabeledBy?: string;
   onChange?(value: number): void;
   ariaValueText?(value: number): string;
 };
@@ -29,11 +32,15 @@ class Slider {
   #progressValue: number;
   #onChange?: SliderOptions["onChange"];
   #ariaValueText?: SliderOptions["ariaValueText"];
+  #name?: string;
+  #ariaLabel?: string;
+  #ariaLabeledBy?: string;
 
   #container: string;
   #slider: HTMLDivElement;
   #progress: HTMLDivElement;
   #thumb: HTMLDivElement;
+  #hiddenInput?: HTMLInputElement;
 
   constructor({
     min,
@@ -41,6 +48,9 @@ class Slider {
     step,
     defaultValue,
     container,
+    name,
+    ariaLabel,
+    ariaLabeledBy,
     onChange,
     ariaValueText,
   }: SliderOptions) {
@@ -52,6 +62,9 @@ class Slider {
     this.#container = container;
     this.#onChange = onChange;
     this.#ariaValueText = ariaValueText;
+    this.#name = name;
+    this.#ariaLabel = ariaLabel;
+    this.#ariaLabeledBy = ariaLabeledBy;
 
     this.#slider = document.createElement("div");
     this.#progress = document.createElement("div");
@@ -96,11 +109,28 @@ class Slider {
     this.#thumb.setAttribute("aria-valuemax", this.#max.toString());
     this.#thumb.setAttribute("aria-valuenow", this.value.toString());
 
+    if (this.#ariaLabel) {
+      this.#thumb.setAttribute("aria-label", this.#ariaLabel);
+    }
+
+    if (this.#ariaLabeledBy) {
+      this.#thumb.setAttribute("aria-labeledby", this.#ariaLabeledBy);
+    }
+
     if (this.#ariaValueText) {
       this.#thumb.setAttribute(
         "aria-valuetext",
         this.#ariaValueText(this.value)
       );
+    }
+
+    if (this.#name) {
+      this.#hiddenInput = document.createElement("input");
+      this.#hiddenInput.type = "hidden";
+      this.#hiddenInput.name = this.#name;
+      this.#hiddenInput.value = this.value.toString();
+
+      this.#slider.appendChild(this.#hiddenInput);
     }
 
     this.#slider.appendChild(this.#progress);
@@ -245,6 +275,10 @@ class Slider {
         this.#ariaValueText(this.value)
       );
     }
+
+    if (this.#hiddenInput) {
+      this.#hiddenInput.value = this.value.toString();
+    }
   };
 
   #notifyListeners = () => {
@@ -256,6 +290,7 @@ class Slider {
 
 new Slider({
   container: "#slider",
+  name: "price-range",
   min: 0,
   max: 200,
   step: 20,
