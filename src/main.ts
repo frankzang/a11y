@@ -19,11 +19,14 @@ type SliderOptions = {
   name?: string;
   ariaLabel?: string;
   ariaLabeledBy?: string;
+  orientation?: Orietantion;
   onChange?(value: number): void;
   ariaValueText?(value: number): string;
 };
 
 type SomePointerEvent = MouseEvent | TouchEvent;
+
+type Orietantion = "horizontal" | "vertical";
 
 class Slider {
   #min: number;
@@ -36,6 +39,7 @@ class Slider {
   #name?: string;
   #ariaLabel?: string;
   #ariaLabeledBy?: string;
+  #orientation: Orietantion;
 
   #container: string;
   #slider: HTMLDivElement;
@@ -52,6 +56,7 @@ class Slider {
     name,
     ariaLabel,
     ariaLabeledBy,
+    orientation,
     onChange,
     ariaValueText,
   }: SliderOptions) {
@@ -66,6 +71,7 @@ class Slider {
     this.#name = name;
     this.#ariaLabel = ariaLabel;
     this.#ariaLabeledBy = ariaLabeledBy;
+    this.#orientation = orientation || "horizontal";
 
     this.#slider = document.createElement("div");
     this.#progress = document.createElement("div");
@@ -78,7 +84,7 @@ class Slider {
 
   get value() {
     const totalValue = this.#max * this.#progressValue;
-    const step = this.#step * this.#max;    
+    const step = this.#step * this.#max;
 
     return Math.floor(
       clampNumber(Math.floor(totalValue / step) * step, this.#min, this.#max)
@@ -104,6 +110,7 @@ class Slider {
     this.#thumb.setAttribute("aria-valuemin", this.#min.toString());
     this.#thumb.setAttribute("aria-valuemax", this.#max.toString());
     this.#thumb.setAttribute("aria-valuenow", this.value.toString());
+    this.#thumb.setAttribute("aria-orientation", this.#orientation);
 
     if (this.#ariaLabel) {
       this.#thumb.setAttribute("aria-label", this.#ariaLabel);
@@ -127,6 +134,10 @@ class Slider {
       this.#hiddenInput.value = this.value.toString();
 
       this.#slider.appendChild(this.#hiddenInput);
+    }
+
+    if (this.#orientation === "vertical") {
+      this.#slider.classList.add("slider--vertical");
     }
 
     this.#slider.appendChild(this.#progress);
@@ -232,26 +243,45 @@ class Slider {
   };
 
   #getGreaterStepValue = () => {
-    const maxAdditional = 0.1 // 10%;
+    const maxAdditional = 0.1; // 10%;
     if (this.#step < maxAdditional) return maxAdditional;
 
     return this.#step;
   };
 
-  #getInteractionCoords = (evt: SomePointerEvent) => {
-    if (evt instanceof MouseEvent) return evt.pageX;
+  #getEventCoords = (evt: SomePointerEvent) => {
+    const coords = { x: 0, y: 0 };
 
-    if (evt instanceof TouchEvent) return evt.changedTouches[0].pageX;
+    if (evt instanceof MouseEvent) {
+      coords.x = evt.pageX;
+      coords.y = evt.pageY;
+
+      return coords;
+    }
+
+    if (evt instanceof TouchEvent) {
+      coords.x = evt.changedTouches[0].pageX;
+      coords.y = evt.changedTouches[0].pageY;
+
+      return coords;
+    }
 
     throw new Error("Unsuported event");
   };
 
   #onInteraction = (evt: SomePointerEvent) => {
-    const { width, left } = this.#slider.getBoundingClientRect();
-    const startX = this.#getInteractionCoords(evt) - left;
-    const movedProgress = startX / (width - 10);
+    const rect = this.#slider.getBoundingClientRect();
 
-    this.#updateProgressValue(movedProgress);
+    let thumbProgress = 0;
+
+    if (this.#orientation === "horizontal") {
+      thumbProgress = (this.#getEventCoords(evt).x - rect.left) / rect.width;
+    } else {
+      thumbProgress =
+        -(this.#getEventCoords(evt).y - rect.bottom) / rect.height;
+    }
+
+    this.#updateProgressValue(thumbProgress);
     this.#moveSlider();
     this.#notifyListeners();
   };
@@ -260,9 +290,12 @@ class Slider {
     const filledValue = Math.floor(this.#progressValue * 100);
     const step = this.#step * 100;
     const stepedProgress = Math.floor(filledValue / step) * step;
+    const isHorizontal = this.#orientation === "horizontal";
+    const dimKey = isHorizontal ? "width" : "height";
+    const axisKey = isHorizontal ? "left" : "bottom";
 
-    this.#progress.style.width = `${stepedProgress}%`;
-    this.#thumb.style.left = `${stepedProgress}%`;
+    this.#progress.style[dimKey] = `${stepedProgress}%`;
+    this.#thumb.style[axisKey] = `${stepedProgress}%`;
     this.#thumb.setAttribute("aria-valuenow", this.value.toString());
 
     if (this.#ariaValueText) {
@@ -288,9 +321,10 @@ new Slider({
   container: "#slider",
   name: "price-range",
   min: 0,
-  max: 200,
-  step: 1,
-  defaultValue: 50,
+  max: 100,
+  step: 10,
+  defaultValue: 10,
+  orientation: "vertical",
   onChange(v) {
     document.querySelector("#val")!.textContent = v.toString();
   },
