@@ -1,11 +1,12 @@
 import "./style.css";
 import clampNumber from "./utils/clampNumber";
-import percentToValue from "./utils/percentToValue";
 
 const app = document.querySelector<HTMLDivElement>("#app")!;
 
 app.innerHTML = `
   <div id="slider">
+  </div>
+  <div id="val">
   </div>
 `;
 
@@ -76,16 +77,11 @@ class Slider {
   }
 
   get value() {
-    const totalValue = Math.floor(
-      percentToValue(this.#progressValue, this.#min, this.#max)
-    );
+    const totalValue = this.#max * this.#progressValue;
+    const step = this.#step * this.#max;    
 
-    const step = this.#step * 100;
-
-    return clampNumber(
-      Math.floor(totalValue / step) * step,
-      this.#min,
-      this.#max
+    return Math.floor(
+      clampNumber(Math.floor(totalValue / step) * step, this.#min, this.#max)
     );
   }
 
@@ -236,7 +232,7 @@ class Slider {
   };
 
   #getGreaterStepValue = () => {
-    const maxAdditional = 0.1;
+    const maxAdditional = 0.1 // 10%;
     if (this.#step < maxAdditional) return maxAdditional;
 
     return this.#step;
@@ -293,10 +289,10 @@ new Slider({
   name: "price-range",
   min: 0,
   max: 200,
-  step: 20,
-  defaultValue: 25,
+  step: 1,
+  defaultValue: 50,
   onChange(v) {
-    console.log({ v });
+    document.querySelector("#val")!.textContent = v.toString();
   },
   ariaValueText(v) {
     return `step-${v.toString()}`;
