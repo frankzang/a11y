@@ -14,7 +14,7 @@
   position: relative;
 }
 
-[data-slider-progress] {
+[data-slider-range] {
   position: absolute;
   max-width: 100%;
   height: 100%;
@@ -35,7 +35,7 @@
   min-height: 100px;
 }
 
-[data-slider-vertical] [data-slider-progress] {
+[data-slider-vertical] [data-slider-range] {
   width: 100%;
   bottom: 0;
 }

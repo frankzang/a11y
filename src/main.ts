@@ -34,7 +34,7 @@ class Slider {
   #max: number;
   #step: number;
   #defaultValue: number;
-  #progressValue: number;
+  #rangeValue: number;
   #onChange?: SliderOptions["onChange"];
   #ariaValueText?: SliderOptions["ariaValueText"];
   #name?: string;
@@ -43,9 +43,9 @@ class Slider {
   #orientation: Orietantion;
 
   #container: string;
-  #slider: HTMLDivElement;
-  #progress: HTMLDivElement;
-  #thumb: HTMLDivElement;
+  #sliderNode: HTMLDivElement;
+  #rangeNode: HTMLDivElement;
+  #thumbNode: HTMLDivElement;
   #hiddenInput?: HTMLInputElement;
 
   constructor({
@@ -64,7 +64,7 @@ class Slider {
     this.#min = min;
     this.#max = max;
     this.#defaultValue = defaultValue || 0;
-    this.#progressValue = 0;
+    this.#rangeValue = 0;
     this.#step = this.#calcStepValue(step, max);
     this.#container = container;
     this.#onChange = onChange;
@@ -74,9 +74,9 @@ class Slider {
     this.#ariaLabeledBy = ariaLabeledBy;
     this.#orientation = orientation || "horizontal";
 
-    this.#slider = document.createElement("div");
-    this.#progress = document.createElement("div");
-    this.#thumb = document.createElement("div");
+    this.#sliderNode = document.createElement("div");
+    this.#rangeNode = document.createElement("div");
+    this.#thumbNode = document.createElement("div");
 
     this.#initDefaultValue();
     this.#createSlider();
@@ -84,7 +84,7 @@ class Slider {
   }
 
   get value() {
-    const totalValue = this.#max * this.#progressValue;
+    const totalValue = this.#max * this.#rangeValue;
     const step = this.#step * this.#max;
 
     return Math.floor(
@@ -96,55 +96,56 @@ class Slider {
     return (step > 0 ? step : 1) / max;
   };
 
-  #updateProgressValue = (newValue: number) => {
+  #updateRangeValue = (newValue: number) => {
     const minValue = this.#min / this.#max;
 
-    this.#progressValue = clampNumber(newValue, minValue, 1);
+    this.#rangeValue = clampNumber(newValue, minValue, 1);
   };
 
   #createSlider = () => {
-    this.#slider.setAttribute("data-slider", "");
-    this.#progress.setAttribute("data-slider-progress", "");
-    this.#thumb.setAttribute("data-slider-thumb", "");
-    this.#thumb.setAttribute("role", "slider");
-    this.#thumb.setAttribute("tabindex", "0");
-    this.#thumb.setAttribute("aria-valuemin", this.#min.toString());
-    this.#thumb.setAttribute("aria-valuemax", this.#max.toString());
-    this.#thumb.setAttribute("aria-valuenow", this.value.toString());
-    this.#thumb.setAttribute("aria-orientation", this.#orientation);
+    this.#sliderNode.setAttribute("data-slider", "");
+    this.#rangeNode.setAttribute("data-slider-range", "");
+    this.#thumbNode.setAttribute("data-slider-thumb", "");
+    this.#thumbNode.setAttribute("role", "slider");
+    this.#thumbNode.setAttribute("tabindex", "0");
+    this.#thumbNode.setAttribute("aria-valuemin", this.#min.toString());
+    this.#thumbNode.setAttribute("aria-valuemax", this.#max.toString());
+    this.#thumbNode.setAttribute("aria-valuenow", this.value.toString());
+    this.#thumbNode.setAttribute("aria-orientation", this.#orientation);
 
     if (this.#ariaLabel) {
-      this.#thumb.setAttribute("aria-label", this.#ariaLabel);
+      this.#thumbNode.setAttribute("aria-label", this.#ariaLabel);
     }
 
     if (this.#ariaLabeledBy) {
-      this.#thumb.setAttribute("aria-labeledby", this.#ariaLabeledBy);
+      this.#thumbNode.setAttribute("aria-labeledby", this.#ariaLabeledBy);
     }
 
     if (this.#ariaValueText) {
-      this.#thumb.setAttribute(
+      this.#thumbNode.setAttribute(
         "aria-valuetext",
         this.#ariaValueText(this.value)
       );
     }
 
+    // if we have a name, probably we are using it inside a form
     if (this.#name) {
       this.#hiddenInput = document.createElement("input");
       this.#hiddenInput.type = "hidden";
       this.#hiddenInput.name = this.#name;
       this.#hiddenInput.value = this.value.toString();
 
-      this.#slider.appendChild(this.#hiddenInput);
+      this.#sliderNode.appendChild(this.#hiddenInput);
     }
 
     if (this.#orientation === "vertical") {
-      this.#slider.setAttribute("data-slider-vertical", "");
+      this.#sliderNode.setAttribute("data-slider-vertical", "");
     }
 
-    this.#slider.appendChild(this.#progress);
-    this.#slider.appendChild(this.#thumb);
+    this.#sliderNode.appendChild(this.#rangeNode);
+    this.#sliderNode.appendChild(this.#thumbNode);
 
-    document.querySelector(this.#container)?.appendChild(this.#slider);
+    document.querySelector(this.#container)?.appendChild(this.#sliderNode);
 
     // this will move the slider to default value if there is one
     this.#moveSlider();
@@ -153,18 +154,18 @@ class Slider {
   #initDefaultValue = () => {
     const value = this.#defaultValue / this.#max;
 
-    this.#updateProgressValue(value);
+    this.#updateRangeValue(value);
   };
 
   #initEventListeners = () => {
-    this.#slider.addEventListener("mousedown", this.#onMouseDown);
-    this.#slider.addEventListener("touchstart", this.#onTouchStart);
-    this.#slider.addEventListener("click", this.#onClick);
-    this.#thumb.addEventListener("keydown", this.#onKeyDown);
+    this.#sliderNode.addEventListener("mousedown", this.#onMouseDown);
+    this.#sliderNode.addEventListener("touchstart", this.#onTouchStart);
+    this.#sliderNode.addEventListener("click", this.#onClick);
+    this.#thumbNode.addEventListener("keydown", this.#onKeyDown);
   };
 
   #onClick = (evt: MouseEvent) => {
-    this.#onInteraction(evt);
+    this.#onInteractionEvent(evt);
   };
 
   #onMouseDown = (evt: MouseEvent) => {
@@ -176,7 +177,7 @@ class Slider {
   };
 
   #onMouseMove = (evt: MouseEvent) => {
-    this.#onInteraction(evt);
+    this.#onInteractionEvent(evt);
   };
 
   #onMouseUp = () => {
@@ -193,7 +194,7 @@ class Slider {
   };
 
   #onTouchMove = (evt: TouchEvent) => {
-    this.#onInteraction(evt);
+    this.#onInteractionEvent(evt);
   };
 
   #onTouchEnd = () => {
@@ -202,12 +203,11 @@ class Slider {
   };
 
   #onKeyDown = (evt: KeyboardEvent) => {
-    const code = evt.key;
     const minValue = this.#min / this.#max;
     const greaterStep = this.#getGreaterStepValue();
-    let newValue = this.#progressValue;
+    let newValue = this.#rangeValue;
 
-    switch (code) {
+    switch (evt.key) {
       case "ArrowUp":
       case "ArrowRight":
         newValue += this.#step;
@@ -238,9 +238,9 @@ class Slider {
         break;
     }
 
-    this.#updateProgressValue(newValue);
+    this.#updateRangeValue(newValue);
     this.#moveSlider();
-    this.#notifyListeners();
+    this.#notifyValueChange();
   };
 
   #getGreaterStepValue = () => {
@@ -256,51 +256,46 @@ class Slider {
     if (evt instanceof MouseEvent) {
       coords.x = evt.pageX;
       coords.y = evt.pageY;
-
-      return coords;
     }
 
     if (evt instanceof TouchEvent) {
       coords.x = evt.changedTouches[0].pageX;
       coords.y = evt.changedTouches[0].pageY;
-
-      return coords;
     }
 
-    throw new Error("Unsuported event");
+    return coords;
   };
 
-  #onInteraction = (evt: SomePointerEvent) => {
-    const rect = this.#slider.getBoundingClientRect();
+  #onInteractionEvent = (evt: SomePointerEvent) => {
+    const rect = this.#sliderNode.getBoundingClientRect();
 
-    let thumbProgress = 0;
+    let rangeValue = 0;
 
     if (this.#orientation === "horizontal") {
-      thumbProgress = (this.#getEventCoords(evt).x - rect.left) / rect.width;
+      rangeValue = (this.#getEventCoords(evt).x - rect.left) / rect.width;
     } else {
-      thumbProgress =
-        -(this.#getEventCoords(evt).y - rect.bottom) / rect.height;
+      rangeValue = -(this.#getEventCoords(evt).y - rect.bottom) / rect.height;
     }
 
-    this.#updateProgressValue(thumbProgress);
+    this.#updateRangeValue(rangeValue);
     this.#moveSlider();
-    this.#notifyListeners();
+    this.#notifyValueChange();
   };
 
   #moveSlider = () => {
-    const filledValue = Math.floor(this.#progressValue * 100);
+    const filledValue = Math.floor(this.#rangeValue * 100);
     const step = this.#step * 100;
-    const stepedProgress = Math.floor(filledValue / step) * step;
+    const stepedRange = Math.floor(filledValue / step) * step;
     const isHorizontal = this.#orientation === "horizontal";
     const dimKey = isHorizontal ? "width" : "height";
     const axisKey = isHorizontal ? "left" : "bottom";
 
-    this.#progress.style[dimKey] = `${stepedProgress}%`;
-    this.#thumb.style[axisKey] = `${stepedProgress}%`;
-    this.#thumb.setAttribute("aria-valuenow", this.value.toString());
+    this.#rangeNode.style[dimKey] = `${stepedRange}%`;
+    this.#thumbNode.style[axisKey] = `${stepedRange}%`;
+    this.#thumbNode.setAttribute("aria-valuenow", this.value.toString());
 
     if (this.#ariaValueText) {
-      this.#thumb.setAttribute(
+      this.#thumbNode.setAttribute(
         "aria-valuetext",
         this.#ariaValueText(this.value)
       );
@@ -311,7 +306,7 @@ class Slider {
     }
   };
 
-  #notifyListeners = () => {
+  #notifyValueChange = () => {
     if (!this.#onChange) return;
 
     this.#onChange(this.value);
