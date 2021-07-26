@@ -8,6 +8,7 @@ app.innerHTML = `
   </div>
   <div id="val">
   </div>
+  <input type="range" />
 `;
 
 type SliderOptions = {
@@ -102,9 +103,9 @@ class Slider {
   };
 
   #createSlider = () => {
-    this.#slider.classList.add("slider");
-    this.#progress.classList.add("progress");
-    this.#thumb.classList.add("thumb");
+    this.#slider.setAttribute("data-slider", "");
+    this.#progress.setAttribute("data-slider-progress", "");
+    this.#thumb.setAttribute("data-slider-thumb", "");
     this.#thumb.setAttribute("role", "slider");
     this.#thumb.setAttribute("tabindex", "0");
     this.#thumb.setAttribute("aria-valuemin", this.#min.toString());
@@ -137,7 +138,7 @@ class Slider {
     }
 
     if (this.#orientation === "vertical") {
-      this.#slider.classList.add("slider--vertical");
+      this.#slider.setAttribute("data-slider-vertical", "");
     }
 
     this.#slider.appendChild(this.#progress);
