@@ -1,5 +1,7 @@
 import "./style.css";
 import clampNumber from "./utils/clampNumber";
+import percentToValue from "./utils/percentToValue";
+import valueToPercent from "./utils/valueToPercent";
 
 const app = document.querySelector<HTMLDivElement>("#app")!;
 
@@ -8,7 +10,7 @@ app.innerHTML = `
   </div>
   <div id="val">
   </div>
-  <input type="range" />
+  <input type="range" min="-10" max="10" />
 `;
 
 type SliderOptions = {
@@ -84,8 +86,9 @@ class Slider {
   }
 
   get value() {
-    const totalValue = this.#max * this.#rangeValue;
     const step = this.#step * this.#max;
+
+    const totalValue = percentToValue(this.#rangeValue, this.#min, this.#max);
 
     return Math.floor(
       clampNumber(Math.floor(totalValue / step) * step, this.#min, this.#max)
@@ -152,7 +155,7 @@ class Slider {
   };
 
   #initDefaultValue = () => {
-    const value = this.#defaultValue / this.#max;
+    const value = valueToPercent(this.#defaultValue, this.#min, this.#max);
 
     this.#updateRangeValue(value);
   };
@@ -283,7 +286,7 @@ class Slider {
   };
 
   #moveSlider = () => {
-    const filledValue = Math.floor(this.#rangeValue * 100);
+    const filledValue = clampNumber(Math.floor(this.#rangeValue * 100), 0, 100);
     const step = this.#step * 100;
     const stepedRange = Math.floor(filledValue / step) * step;
     const isHorizontal = this.#orientation === "horizontal";
@@ -316,10 +319,10 @@ class Slider {
 new Slider({
   container: "#slider",
   name: "price-range",
-  min: 0,
-  max: 100,
-  step: 10,
-  defaultValue: 10,
+  min: -100,
+  max: 200,
+  step: 21,
+  defaultValue: 0,
   orientation: "vertical",
   onChange(v) {
     document.querySelector("#val")!.textContent = v.toString();
